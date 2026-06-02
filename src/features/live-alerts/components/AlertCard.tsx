@@ -27,7 +27,7 @@ export function AlertCard({
       className={cn(
         'flex flex-col gap-4 p-5 transition-shadow',
         // Unread alerts get a coral left rail to draw the eye.
-        isUnread && 'ring-2 ring-mngment-coral/40',
+        isUnread && 'ring-2 ring-mngmnt-coral/40',
       )}
     >
       <div className="flex items-start gap-3">

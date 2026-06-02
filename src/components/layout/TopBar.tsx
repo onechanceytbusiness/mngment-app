@@ -12,7 +12,7 @@ export function TopBar() {
     ? current.subtitle
       ? `${current.name} – ${current.subtitle}`
       : current.name
-    : 'mngment';
+    : 'mngmnt';
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b border-stone-200 bg-white px-6 md:px-10">
@@ -32,7 +32,7 @@ export function TopBar() {
           <span
             className={cn(
               'h-1.5 w-1.5 rounded-full',
-              isMock ? 'bg-mngment-coral' : 'bg-mngment-ink',
+              isMock ? 'bg-mngmnt-coral' : 'bg-mngmnt-ink',
             )}
           />
           API mode: {apiConfig.mode}

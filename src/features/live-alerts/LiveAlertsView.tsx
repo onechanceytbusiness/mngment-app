@@ -63,7 +63,7 @@ function FilterTabs({
               className={cn(
                 'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums',
                 active
-                  ? 'bg-stone-900 text-mngment-paper'
+                  ? 'bg-stone-900 text-mngmnt-paper'
                   : 'bg-stone-200 text-stone-600',
               )}
             >

@@ -14,13 +14,13 @@ interface ToastProps {
   onClose: (id: string) => void;
 }
 
-// Strict mngment palette: coral for success (the celebratory brand accent),
+// Strict mngmnt palette: coral for success (the celebratory brand accent),
 // ink for info (quiet, on-brand), rose kept for error so destructive states
 // stay visually distinct from the brand accent.
 const KIND_STYLES: Record<ToastKind, { bar: string; icon: string }> = {
   success: { bar: 'bg-brand-500', icon: 'text-brand-500' },
   error: { bar: 'bg-rose-500', icon: 'text-rose-500' },
-  info: { bar: 'bg-mngment-ink', icon: 'text-mngment-ink' },
+  info: { bar: 'bg-mngmnt-ink', icon: 'text-mngmnt-ink' },
 };
 
 export function Toast({ toast, onClose }: ToastProps) {

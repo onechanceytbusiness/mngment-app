@@ -4,7 +4,9 @@
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT: $?\")",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Read(//Users/ankushkumar/Downloads/**)",
+      "Bash(find \"/Users/ankushkumar/Downloads/mngment files\" \"/Users/ankushkumar/Downloads/Nuvora files\" \"/Users/ankushkumar/Downloads\" \"/Users/ankushkumar/Desktop\" -maxdepth 3 -type f -iname \"*.json\" 2>/dev/null | head -30)"
     ]
   }
 }

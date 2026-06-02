@@ -6,7 +6,7 @@ export interface PriorityChipProps {
 }
 
 /**
- * Priority is signalled by intensity, not by hue (the mngment palette is
+ * Priority is signalled by intensity, not by hue (the mngmnt palette is
  * strict — ink/coral/paper only).
  *
  * - High (≥80):  solid coral with paper text
@@ -19,7 +19,7 @@ export function PriorityChip({ score, className }: PriorityChipProps) {
 
   const styles =
     tier === 'high'
-      ? 'bg-mngment-coral text-mngment-paper'
+      ? 'bg-mngmnt-coral text-mngmnt-paper'
       : tier === 'medium'
         ? 'bg-brand-100 text-brand-700'
         : 'bg-stone-100 text-stone-700';

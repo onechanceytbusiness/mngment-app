@@ -92,7 +92,7 @@ function TabButton({
       className={cn(
         'group relative inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors',
         active
-          ? 'border-mngment-coral text-stone-900'
+          ? 'border-mngmnt-coral text-stone-900'
           : 'border-transparent text-stone-500 hover:text-stone-800',
       )}
     >
@@ -107,7 +107,7 @@ function TabButton({
       {label}
       {badge && badge > 0 ? (
         <span
-          className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-mngment-coral px-1.5 text-[10px] font-bold leading-none text-mngment-paper"
+          className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-mngmnt-coral px-1.5 text-[10px] font-bold leading-none text-mngmnt-paper"
           aria-label={`${badge} unread alerts`}
         >
           {badge > 9 ? '9+' : badge}

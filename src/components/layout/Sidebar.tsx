@@ -13,8 +13,8 @@ const ICONS: Record<string, LucideIcon> = {
 function BrandLogo({ className }: { className?: string }) {
   return (
     <img
-      src="/brand/mngment-burst-icon.svg"
-      alt="mngment"
+      src="/brand/mngmnt-burst-icon.svg"
+      alt="mngmnt"
       width={40}
       height={40}
       className={cn('h-10 w-10 shrink-0 rounded-xl', className)}
@@ -30,7 +30,7 @@ export function Sidebar() {
         <BrandLogo />
         <div className="hidden min-w-0 md:block">
           <div className="truncate text-base font-bold text-stone-900">
-            mngment
+            mngmnt
           </div>
           <div className="truncate text-xs text-stone-500">Internal</div>
         </div>
@@ -79,7 +79,7 @@ export function Sidebar() {
                         <Icon className="h-4 w-4" />
                         {unread > 0 ? (
                           <span
-                            className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-mngment-coral px-1 text-[10px] font-bold leading-none text-mngment-paper ring-2 ring-white"
+                            className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-mngmnt-coral px-1 text-[10px] font-bold leading-none text-mngmnt-paper ring-2 ring-white"
                             aria-label={`${unread} unread alerts`}
                           >
                             {unread > 9 ? '9+' : unread}
@@ -95,7 +95,7 @@ export function Sidebar() {
                         className={cn(
                           'hidden shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide md:inline-block',
                           a.status === 'active'
-                            ? 'bg-mngment-coral text-mngment-paper'
+                            ? 'bg-mngmnt-coral text-mngmnt-paper'
                             : 'bg-stone-200 text-stone-600',
                         )}
                       >

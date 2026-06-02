@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand ramp anchored on mngment Coral (#FF5A3C) at -500.
+        // Brand ramp anchored on mngmnt Coral (#FF5A3C) at -500.
         // Use brand-* for generic UI tints (active states, focus rings,
         // gradient CTAs) so swapping the brand later only requires
         // re-tuning this ramp.
@@ -20,10 +20,10 @@ export default {
           800: '#9c2f1d',
           900: '#7d2a1c',
         },
-        // Exact mngment palette from the brand board. Use these tokens
+        // Exact mngmnt palette from the brand board. Use these tokens
         // when a surface must hit the official hex (page backgrounds,
         // ink-on-paper headings, the coral accent dot, etc.).
-        mngment: {
+        mngmnt: {
           ink: '#16161D',
           coral: '#FF5A3C',
           paper: '#F5F3EE',

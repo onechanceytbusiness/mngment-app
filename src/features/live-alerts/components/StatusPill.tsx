@@ -9,13 +9,13 @@ const STATUS_LABEL: Record<AlertStatus, string> = {
 
 const STATUS_STYLE: Record<AlertStatus, string> = {
   // Spotlight on unreviewed items — solid brand coral.
-  new: 'bg-mngment-coral text-mngment-paper',
+  new: 'bg-mngmnt-coral text-mngmnt-paper',
   // Acknowledged but not yet live — quiet coral tint with the brand
   // text colour, signalling "in progress".
   draft: 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200',
   // Done — solid ink for a "shipped" feel that contrasts with the
   // active states above.
-  published: 'bg-mngment-ink text-mngment-paper',
+  published: 'bg-mngmnt-ink text-mngmnt-paper',
 };
 
 export function StatusPill({ status }: { status: AlertStatus }) {
