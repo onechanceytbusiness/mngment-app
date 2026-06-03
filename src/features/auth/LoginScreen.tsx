@@ -54,7 +54,7 @@ export function LoginScreen() {
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 shadow-card">
         <div className="flex flex-col items-center gap-2 text-center">
           <img
-            src="/brand/mngment-burst-icon.svg"
+            src="/brand/mngmnt-burst-icon.svg"
             alt="mngmnt"
             className="h-12 w-12 rounded-xl"
           />

@@ -2,8 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Browser tab favicon (SVG, scales perfectly) -->
     <link rel="icon" type="image/svg+xml" href="/brand/mngmnt-burst-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- iOS home-screen icon. iOS only reads PNG here, not SVG.
+         512x512 source; iOS resamples down to 180x180 for the tile. -->
+    <link rel="apple-touch-icon" href="/brand/mngmnt-burst-icon.png" />
+
+    <!-- Android PWA / "Add to Home Screen" -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Brand colour for the URL bar (Android Chrome) and the iOS
+         status-bar tint when launched as a standalone PWA. -->
+    <meta name="theme-color" content="#16161D" />
+
+    <!-- iOS standalone PWA settings — launched from Home Screen runs
+         without Safari chrome with this title under the icon. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="mngmnt" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <meta name="description" content="mngmnt — internal media automation hub" />
     <title>mngmnt</title>
   </head>
   <body>

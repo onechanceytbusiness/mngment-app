@@ -1,0 +1,25 @@
+{
+  "name": "mngmnt",
+  "short_name": "mngmnt",
+  "description": "Internal media automation hub",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F3EE",
+  "theme_color": "#16161D",
+  "icons": [
+    {
+      "src": "/brand/mngmnt-burst-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/mngmnt-burst-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
