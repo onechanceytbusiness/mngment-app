@@ -1,12 +1,15 @@
 import { useParams } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { automations } from '@/config/automations';
 import { apiConfig } from '@/lib/api/config';
 import { cn } from '@/lib/cn';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 export function TopBar() {
   const { id } = useParams<{ id: string }>();
   const current = automations.find((a) => a.id === id);
   const isMock = apiConfig.mode === 'mock';
+  const { user, signOut } = useAuth();
 
   const title = current
     ? current.subtitle
@@ -37,6 +40,17 @@ export function TopBar() {
           />
           API mode: {apiConfig.mode}
         </span>
+        {user?.email ? (
+          <span className="hidden text-sm text-stone-500 sm:block">{user.email}</span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => signOut()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sign out
+        </button>
       </div>
     </header>
   );
