@@ -6,6 +6,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NotFound } from '@/components/layout/NotFound';
 import { getAutomationComponent } from '@/config/automationRegistry';
 import { AlertsProvider } from '@/features/live-alerts/AlertsProvider';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { LoginScreen } from '@/features/auth/LoginScreen';
 
 function AutomationRoute() {
   const { id } = useParams<{ id: string }>();
@@ -29,19 +31,26 @@ function AutomationRoute() {
 }
 
 export default function App() {
+  const { session, loading } = useAuth();
+
   return (
     <ToastProvider>
       <AlertsProvider>
-        <Routes>
-          <Route
-            path="/"
-            element={<Navigate to="/automations/fashion-audit" replace />}
-          />
-          <Route element={<DashboardLayout />}>
-            <Route path="/automations/:id" element={<AutomationRoute />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        {loading ? (
+          <div className="flex min-h-screen items-center justify-center text-stone-400">
+            <Spinner size="lg" />
+          </div>
+        ) : !session ? (
+          <LoginScreen />
+        ) : (
+          <Routes>
+            <Route path="/" element={<Navigate to="/automations/fashion-audit" replace />} />
+            <Route element={<DashboardLayout />}>
+              <Route path="/automations/:id" element={<AutomationRoute />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        )}
       </AlertsProvider>
     </ToastProvider>
   );
