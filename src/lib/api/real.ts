@@ -1,4 +1,5 @@
 import { apiConfig } from '@/lib/api/config';
+import { supabase } from '@/lib/supabase';
 import type {
   Alert,
   Article,
@@ -7,6 +8,16 @@ import type {
   Region,
   Title,
 } from '@/lib/types';
+
+/**
+ * Returns the current Supabase access token, or null if no session.
+ * Called before every request so token refresh handled by supabase-js is
+ * always reflected in the Authorization header.
+ */
+async function getAccessToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
 
 function url(path: string): string {
   if (!apiConfig.baseUrl) {
@@ -22,12 +33,16 @@ async function postJson<TBody, TResult>(
   endpoint: string,
   body: TBody,
 ): Promise<TResult> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  const token = await getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(url(endpoint), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -44,9 +59,13 @@ async function postJson<TBody, TResult>(
 }
 
 async function getJson<TResult>(endpoint: string): Promise<TResult> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = await getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(url(endpoint), {
     method: 'GET',
-    headers: { Accept: 'application/json' },
+    headers,
   });
 
   if (!res.ok) {
