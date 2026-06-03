@@ -1,4 +1,5 @@
 import { apiConfig } from '@/lib/api/config';
+import { supabase } from '@/lib/supabase';
 import type {
   Alert,
   Article,
@@ -18,6 +19,15 @@ function url(path: string): string {
   return `${apiConfig.baseUrl}${normalizedPath}`;
 }
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
+}
+
 async function postJson<TBody, TResult>(
   endpoint: string,
   body: TBody,
@@ -27,6 +37,7 @@ async function postJson<TBody, TResult>(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...(await authHeaders()),
     },
     body: JSON.stringify(body),
   });
@@ -46,7 +57,10 @@ async function postJson<TBody, TResult>(
 async function getJson<TResult>(endpoint: string): Promise<TResult> {
   const res = await fetch(url(endpoint), {
     method: 'GET',
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      ...(await authHeaders()),
+    },
   });
 
   if (!res.ok) {
