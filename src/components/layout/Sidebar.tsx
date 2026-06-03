@@ -36,7 +36,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-5 md:px-4">
+      <div className="flex-1 overflow-y-auto px-2 py-4 md:px-4 md:py-5">
         <div className="mb-3 hidden px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400 md:block">
           Automations
         </div>
@@ -57,7 +57,7 @@ export function Sidebar() {
                 }}
                 className={({ isActive }) =>
                   cn(
-                    'group block rounded-xl border p-3 transition-colors',
+                    'group block rounded-xl border p-2 transition-colors md:p-3',
                     isActive
                       ? 'border-brand-200 bg-brand-50'
                       : 'border-transparent hover:bg-stone-50',
@@ -67,7 +67,7 @@ export function Sidebar() {
               >
                 {({ isActive }) => (
                   <>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center gap-2.5 md:justify-start">
                       <div
                         className={cn(
                           'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',

@@ -51,7 +51,7 @@ function TabStrip({
     <div
       role="tablist"
       aria-label="FA Blog Automation modes"
-      className="mb-6 flex items-center gap-1 border-b border-stone-200"
+      className="mb-6 inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1"
     >
       <TabButton
         active={value === 'generate'}
@@ -90,16 +90,16 @@ function TabButton({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'group relative inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors',
+        'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
         active
-          ? 'border-mngmnt-coral text-stone-900'
-          : 'border-transparent text-stone-500 hover:text-stone-800',
+          ? 'bg-white text-stone-900 shadow-soft'
+          : 'text-stone-500 hover:text-stone-700',
       )}
     >
       <span
         className={cn(
-          'flex h-6 w-6 items-center justify-center rounded-md',
-          active ? 'bg-brand-100 text-brand-700' : 'text-stone-400',
+          'flex h-4 w-4 items-center justify-center',
+          active ? 'text-brand-600' : 'text-stone-400',
         )}
       >
         {icon}
@@ -107,7 +107,7 @@ function TabButton({
       {label}
       {badge && badge > 0 ? (
         <span
-          className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-mngmnt-coral px-1.5 text-[10px] font-bold leading-none text-mngmnt-paper"
+          className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-mngmnt-coral px-1.5 text-[10px] font-bold leading-none text-mngmnt-paper"
           aria-label={`${badge} unread alerts`}
         >
           {badge > 9 ? '9+' : badge}

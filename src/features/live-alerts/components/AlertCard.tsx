@@ -25,18 +25,18 @@ export function AlertCard({
   return (
     <Card
       className={cn(
-        'flex flex-col gap-4 p-5 transition-shadow',
-        // Unread alerts get a coral left rail to draw the eye.
+        'flex flex-col gap-3 p-4 transition-shadow md:gap-4 md:p-5',
+        // Unread alerts get a coral ring to draw the eye.
         isUnread && 'ring-2 ring-mngmnt-coral/40',
       )}
     >
       <div className="flex items-start gap-3">
         <PriorityChip score={alert.score} className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold leading-snug text-stone-900">
+          <h3 className="text-sm font-semibold leading-snug text-stone-900 line-clamp-2 md:text-base">
             {alert.title}
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-stone-600">
+          <p className="mt-1 text-sm leading-relaxed text-stone-600 line-clamp-3">
             <span className="font-medium text-stone-500">Why it matters: </span>
             {alert.reason}
           </p>
