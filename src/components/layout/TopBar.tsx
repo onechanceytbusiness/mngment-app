@@ -25,27 +25,34 @@ export function TopBar() {
     try {
       await signOut();
     } finally {
-      // onAuthStateChange will swap the gate to <LoginScreen/>, but in the
-      // brief window before it fires we still want the button re-enabled
-      // if Supabase returned synchronously.
       setSigningOut(false);
     }
   };
 
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b border-stone-200 bg-white px-6 md:px-10">
-      <div className="min-w-0">
-        <h1 className="truncate text-lg font-bold text-stone-900">{title}</h1>
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-stone-200 bg-white px-3 md:h-20 md:gap-3 md:px-10">
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-sm font-bold text-stone-900 md:text-lg">
+          {title}
+        </h1>
         {current?.description ? (
           <p className="hidden truncate text-sm text-stone-500 md:block">
             {current.description}
           </p>
         ) : null}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 md:gap-3">
+        {/*
+          On mobile the API-mode pill collapses to a single coloured dot
+          (still tooltipped). On md+ the full "API mode: real|mock" label
+          shows. Keeps a status indicator visible without eating the bar.
+        */}
         <span
-          className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700"
-          title={`API base: ${apiConfig.baseUrl || '(unset)'}`}
+          className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-2 py-1.5 text-xs font-semibold text-stone-700 md:px-3"
+          title={`API mode: ${apiConfig.mode}${
+            apiConfig.baseUrl ? ` · base: ${apiConfig.baseUrl}` : ''
+          }`}
+          aria-label={`API mode: ${apiConfig.mode}`}
         >
           <span
             className={cn(
@@ -53,10 +60,10 @@ export function TopBar() {
               isMock ? 'bg-mngmnt-coral' : 'bg-mngmnt-ink',
             )}
           />
-          API mode: {apiConfig.mode}
+          <span className="hidden md:inline">API mode: {apiConfig.mode}</span>
         </span>
         {user ? (
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <span
               className="hidden max-w-[200px] truncate text-xs font-medium text-stone-600 md:inline"
               title={user.email ?? ''}
@@ -70,8 +77,10 @@ export function TopBar() {
               disabled={signingOut}
               leftIcon={<LogOut className="h-4 w-4" />}
               onClick={handleSignOut}
+              aria-label="Sign out"
+              className="!px-2 md:!px-3"
             >
-              Sign out
+              <span className="hidden md:inline">Sign out</span>
             </Button>
           </div>
         ) : null}
