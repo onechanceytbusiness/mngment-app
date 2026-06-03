@@ -60,6 +60,11 @@ export function LoginScreen() {
           />
           <h1 className="text-xl font-bold text-stone-900">Sign in to mngmnt</h1>
           <p className="text-sm text-stone-500">Internal automation hub</p>
+          <div className="mt-1 inline-flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+            <span className="h-px w-6 bg-stone-300" aria-hidden />
+            One Chance Media
+            <span className="h-px w-6 bg-stone-300" aria-hidden />
+          </div>
         </div>
 
         <form className="mt-6 flex flex-col gap-3" onSubmit={handlePasswordSubmit}>
