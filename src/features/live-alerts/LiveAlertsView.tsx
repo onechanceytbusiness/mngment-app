@@ -293,11 +293,11 @@ export default function LiveAlertsView() {
             From {editingAlert.source} · {timeAgo(editingAlert.createdAt)}
           </span>
         </div>
-        <div className="flex gap-6">
-          <div className="flex-1">
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="min-w-0 flex-1">
             <ArticleEditor article={draftArticle} onChange={setDraftArticle} />
           </div>
-          <div className="flex w-80 shrink-0 flex-col gap-5">
+          <div className="flex shrink-0 flex-col gap-5 lg:w-80">
             <FeaturedImageUploader
               image={featuredImage}
               onChange={setFeaturedImage}
@@ -319,30 +319,32 @@ export default function LiveAlertsView() {
   // ----- List screen -----
   return (
     <div className="mx-auto max-w-4xl py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-900">Live Alerts</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            High-priority fashion stories your monitor flagged — review and
-            publish.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {lastUpdatedAt ? (
-            <span className="text-xs text-stone-400">
-              Last checked {timeAgo(new Date(lastUpdatedAt).toISOString())}
-            </span>
-          ) : null}
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-xl font-bold text-stone-900 md:text-2xl">
+            Live Alerts
+          </h1>
           <Button
             variant="secondary"
             size="sm"
             onClick={handleRefresh}
             loading={loading}
             leftIcon={<RefreshCw className="h-4 w-4" />}
+            aria-label="Refresh alerts"
+            className="!px-2 sm:!px-3"
           >
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
+        <p className="mt-1.5 text-xs leading-relaxed text-stone-500 md:text-sm">
+          High-priority fashion stories your monitor flagged — review and
+          publish.
+        </p>
+        {lastUpdatedAt ? (
+          <p className="mt-2 text-xs text-stone-400">
+            Last checked {timeAgo(new Date(lastUpdatedAt).toISOString())}
+          </p>
+        ) : null}
       </div>
 
       <div className="mb-5">

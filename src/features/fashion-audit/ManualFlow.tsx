@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle2, ExternalLink, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ExternalLink,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -118,8 +124,8 @@ function ArticleSkeleton() {
       <p className="text-sm text-stone-500">
         Drafting article… this can take ~30 seconds
       </p>
-      <div className="flex gap-6">
-        <div className="flex-1">
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="min-w-0 flex-1">
           <Skeleton className="h-10 w-2/3" />
           <div className="mt-6 overflow-hidden rounded-xl border border-stone-200 bg-white p-6 shadow-soft">
             <Skeleton className="h-6 w-1/2" />
@@ -133,7 +139,7 @@ function ArticleSkeleton() {
           </div>
           <Skeleton className="mt-4 h-20 w-full" />
         </div>
-        <div className="w-80 shrink-0">
+        <div className="shrink-0 lg:w-80">
           <Skeleton className="h-32 w-full" />
           <Skeleton className="mt-4 h-10 w-full" />
           <Skeleton className="mt-2 h-10 w-full" />
@@ -246,16 +252,16 @@ export default function ManualFlow() {
 
   if (state.step === 'idle') {
     return (
-      <div className="mx-auto max-w-3xl py-10">
-        <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-card md:p-10">
+      <div className="mx-auto max-w-3xl py-6 md:py-10">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-card sm:p-8 md:p-10">
           <div className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600">
             <Sparkles className="h-4 w-4" />
             <span>Step 1 · Brainstorm</span>
           </div>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-stone-900">
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">
             Generate fresh fashion-news ideas
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-stone-500">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-500 sm:text-base">
             We'll scan recent headlines from trusted sources and surface a list
             of draftable angles. Pick a region to focus on.
           </p>
@@ -296,8 +302,8 @@ export default function ManualFlow() {
             </p>
           </div>
 
-          <div className="mt-8 flex items-end gap-4">
-            <div className="flex w-28 shrink-0 flex-col gap-1.5">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+            <div className="flex w-full flex-col gap-1.5 sm:w-28 sm:shrink-0">
               <label
                 htmlFor="count"
                 className="text-sm font-semibold text-stone-900"
@@ -323,7 +329,7 @@ export default function ManualFlow() {
               variant="gradient"
               onClick={handleGenerateTitles}
               leftIcon={<Sparkles className="h-5 w-5" />}
-              className="h-12 flex-1"
+              className="h-12 w-full whitespace-nowrap sm:flex-1"
             >
               Generate Titles
             </Button>
@@ -335,7 +341,7 @@ export default function ManualFlow() {
 
   if (state.step === 'titles') {
     return (
-      <div className="mx-auto max-w-5xl py-8">
+      <div className="mx-auto max-w-5xl py-6 md:py-8">
         <button
           type="button"
           onClick={handleBackToIdle}
@@ -344,16 +350,33 @@ export default function ManualFlow() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-stone-900">
-              Pick a title to draft
-            </h1>
-            <p className="mt-1 text-sm text-stone-500">
-              Showing <span className="font-medium text-stone-700">{activeRegion.label}</span> news. Choose one and we'll write the article.
-            </p>
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold text-stone-900 md:text-2xl">
+                Pick a title to draft
+              </h1>
+              <p className="mt-1 text-sm text-stone-500">
+                Showing{' '}
+                <span className="font-medium text-stone-700">
+                  {activeRegion.label}
+                </span>{' '}
+                news. Choose one and we'll write the article.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleGenerateTitles}
+              loading={loadingTitles}
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+              aria-label="Regenerate titles"
+              className="!px-2 sm:!px-3"
+            >
+              <span className="hidden sm:inline">Regenerate</span>
+            </Button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex">
             <RegionToggle
               value={region}
               onChange={(r) => {
@@ -364,14 +387,6 @@ export default function ManualFlow() {
               }}
               disabled={loadingTitles}
             />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleGenerateTitles}
-              loading={loadingTitles}
-            >
-              Regenerate
-            </Button>
           </div>
         </div>
         {loadingTitles ? (
@@ -385,12 +400,12 @@ export default function ManualFlow() {
 
   if (state.step === 'editing') {
     return (
-      <div className="mx-auto max-w-6xl py-8">
+      <div className="mx-auto max-w-6xl py-6 md:py-8">
         {loadingArticle || !state.article ? (
           <ArticleSkeleton />
         ) : (
-          <div className="flex gap-6">
-            <div className="flex-1">
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <div className="min-w-0 flex-1">
               <ArticleEditor
                 article={state.article}
                 onChange={(next) =>
@@ -398,7 +413,7 @@ export default function ManualFlow() {
                 }
               />
             </div>
-            <div className="flex w-80 shrink-0 flex-col gap-5">
+            <div className="flex shrink-0 flex-col gap-5 lg:w-80">
               <FeaturedImageUploader
                 image={state.featuredImage}
                 onChange={(img) =>
