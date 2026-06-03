@@ -210,6 +210,13 @@ export default function ManualFlow() {
     }));
   };
 
+  const handleBackToIdle = () => {
+    // Reset the in-flow state (titles, article, image, etc.) but keep the
+    // user's region + count selections — they likely want to tweak inputs,
+    // not start completely over.
+    setState(initialState);
+  };
+
   const handlePublished = (
     result: PublishResult,
     status: 'publish' | 'draft',
@@ -329,6 +336,14 @@ export default function ManualFlow() {
   if (state.step === 'titles') {
     return (
       <div className="mx-auto max-w-5xl py-8">
+        <button
+          type="button"
+          onClick={handleBackToIdle}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-stone-900">
