@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NotFound } from '@/components/layout/NotFound';
 import { getAutomationComponent } from '@/config/automationRegistry';
 import { AlertsProvider } from '@/features/live-alerts/AlertsProvider';
+import { DealsProvider } from '@/features/fa-deals/DealsProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { LoginScreen } from '@/features/auth/LoginScreen';
 
@@ -72,7 +73,9 @@ export default function App() {
   return (
     <ToastProvider>
       <AlertsProvider>
-        <GatedRoutes />
+        <DealsProvider>
+          <GatedRoutes />
+        </DealsProvider>
       </AlertsProvider>
     </ToastProvider>
   );

@@ -25,4 +25,12 @@ export const automations: AutomationDef[] = [
     icon: 'Newspaper',
     status: 'active',
   },
+  {
+    id: 'fa-deals',
+    name: 'FA Deals Automation',
+    description:
+      'Find, convert, and post product deals to your Telegram channels — review and publish.',
+    icon: 'Tag',
+    status: 'active',
+  },
 ];

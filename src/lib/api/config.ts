@@ -14,6 +14,14 @@ const alerts = import.meta.env.VITE_N8N_ALERTS_PATH ?? '/alerts';
 const dismissAlert =
   import.meta.env.VITE_N8N_DISMISS_ALERT_PATH ?? '/alerts/:id/dismiss';
 
+/**
+ * Deal webhooks are full URLs (not paths under VITE_N8N_BASE_URL) because
+ * the user keeps them as standalone env vars per the spec. They still
+ * point at the same n8n cloud instance.
+ */
+const enrichDealUrl = import.meta.env.VITE_ENRICH_DEAL_URL ?? '';
+const postDealUrl = import.meta.env.VITE_POST_DEAL_URL ?? '';
+
 export const apiConfig = {
   mode,
   baseUrl,
@@ -23,6 +31,10 @@ export const apiConfig = {
     publish,
     alerts,
     dismissAlert,
+  },
+  urls: {
+    enrichDeal: enrichDealUrl,
+    postDeal: postDealUrl,
   },
 } as const;
 

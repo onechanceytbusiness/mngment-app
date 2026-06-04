@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Bell, Newspaper, Sparkles, type LucideIcon } from 'lucide-react';
+import { Bell, Newspaper, Sparkles, Tag, type LucideIcon } from 'lucide-react';
 import { automations } from '@/config/automations';
 import { useAlerts } from '@/features/live-alerts/AlertsProvider';
+import { useDeals } from '@/features/fa-deals/DealsProvider';
 import { cn } from '@/lib/cn';
 
 const ICONS: Record<string, LucideIcon> = {
   Newspaper,
   Sparkles,
   Bell,
+  Tag,
 };
 
 function BrandLogo({ className }: { className?: string }) {
@@ -47,6 +49,7 @@ function useIsMd(): boolean {
 
 export function Sidebar() {
   const { unreadCount } = useAlerts();
+  const { unpostedCount } = useDeals();
   const isMd = useIsMd();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -142,7 +145,12 @@ export function Sidebar() {
             {automations.map((a) => {
               const Icon = ICONS[a.icon] ?? Sparkles;
               const disabled = a.status === 'coming-soon';
-              const unread = a.id === 'fashion-audit' ? unreadCount : 0;
+              const unread =
+              a.id === 'fashion-audit'
+                ? unreadCount
+                : a.id === 'fa-deals'
+                  ? unpostedCount
+                  : 0;
               return (
                 <NavLink
                   key={a.id}

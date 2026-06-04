@@ -38,4 +38,17 @@ export function dismissAlert(id: string): Promise<{ ok: true }> {
   return impl.dismissAlert(id);
 }
 
+// Deals API (its own module — Supabase CRUD + webhook calls with their
+// own mock/real switch). Re-exported so feature code can import from a
+// single `@/lib/api` surface.
+export {
+  enrichDeal,
+  postDealToTelegram,
+  listDeals,
+  countUnpostedDeals,
+  insertDeal,
+  updateDeal,
+  deleteDeal,
+} from '@/lib/api/deals';
+
 export { apiConfig };
