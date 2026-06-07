@@ -90,6 +90,17 @@ function DealsListSkeleton() {
   );
 }
 
+// Stored categories are granular ("Men's footwear", "Gadgets", "Haircare", …).
+// Map each to one of the five groups the filter tabs use.
+function groupOf(d: Deal): CategoryFilterValue {
+  const c = (d.category ?? '').toLowerCase();
+  if (/gadget|electronic|watch|headphone|earbud|earphone|speaker|audio|tv|laptop|tablet|phone/.test(c)) return 'electronics';
+  if (/skincare|serum|moistur|sunscreen|face wash|toner|cleanser/.test(c)) return 'skincare';
+  if (/beauty|makeup|make-up|cosmetic|hair|fragrance|lip|nail|kajal/.test(c)) return 'beauty';
+  if (/home|kitchen|decor|furnish|cookware/.test(c)) return 'home';
+  return 'fashion';
+}
+
 export default function FaDealsView() {
   const toast = useToast();
   const { refresh: refreshBadge } = useDeals();
@@ -126,7 +137,7 @@ export default function FaDealsView() {
   // Local computed lists so swapping the filter doesn't re-fetch.
   const visible = useMemo(() => {
     if (filter === 'all') return deals;
-    return deals.filter((d) => d.category === filter);
+    return deals.filter((d) => groupOf(d) === filter);
   }, [deals, filter]);
 
   const categoryCounts = useMemo(() => {
@@ -134,7 +145,7 @@ export default function FaDealsView() {
       all: deals.length,
     };
     for (const d of deals) {
-      const key = d.category as CategoryFilterValue;
+      const key = groupOf(d);
       out[key] = (out[key] ?? 0) + 1;
     }
     return out;
