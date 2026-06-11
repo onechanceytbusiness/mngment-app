@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import {
   ChevronDown,
   ImageIcon,
@@ -19,6 +19,12 @@ import {
 import type { DailyOutfit, OutfitStatus, ProductLink } from '@/lib/types';
 import { OUTFIT_STATUSES } from '@/lib/types';
 import { STATUS_META } from '@/features/aahaan-studio/lib/status';
+import {
+  PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
+  categoryFromUrl,
+  type ProductCategory,
+} from '@/features/aahaan-studio/lib/productCategories';
 
 export interface OutfitDetailModalProps {
   open: boolean;
@@ -95,9 +101,11 @@ export function OutfitDetailModal({
   const [form, setForm] = useState<FormState>(() => buildInitial(outfit));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  // Per-category upload state — null when nothing is uploading, otherwise
+  // the category currently in flight (so we can dim just that slot's button).
+  const [uploadingCategory, setUploadingCategory] =
+    useState<ProductCategory | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // When the modal opens for a different outfit, reset everything.
   useEffect(() => {
@@ -114,17 +122,21 @@ export function OutfitDetailModal({
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value as FormState[K] }));
 
-  const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    // Reset the input immediately so picking the same file twice re-fires onChange.
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  /**
+   * Upload N files to a specific category. Used by the per-category
+   * upload buttons. Each upload writes to a path prefixed by the
+   * category so categoryFromUrl() can later group them on load.
+   */
+  const handleCategoryFiles = async (
+    category: ProductCategory,
+    files: File[],
+  ) => {
     if (files.length === 0) return;
-
-    setUploading(true);
+    setUploadingCategory(category);
     try {
-      // Upload in parallel; partial success is fine — we don't want one
-      // bad file to discard all the good ones.
-      const results = await Promise.allSettled(files.map(uploadProductShot));
+      const results = await Promise.allSettled(
+        files.map((f) => uploadProductShot(f, category)),
+      );
       const ok: string[] = [];
       let failed = 0;
       for (const r of results) {
@@ -138,28 +150,49 @@ export function OutfitDetailModal({
         }));
         toast.success(
           ok.length === 1
-            ? 'Screenshot uploaded.'
-            : `${ok.length} screenshots uploaded.`,
+            ? `Uploaded to ${PRODUCT_CATEGORY_LABELS[category]}.`
+            : `${ok.length} screenshots uploaded to ${PRODUCT_CATEGORY_LABELS[category]}.`,
         );
       }
       if (failed > 0) {
         toast.error(
-          failed === 1
-            ? '1 upload failed.'
-            : `${failed} uploads failed.`,
+          failed === 1 ? '1 upload failed.' : `${failed} uploads failed.`,
         );
       }
     } finally {
-      setUploading(false);
+      setUploadingCategory(null);
     }
   };
 
-  const removeImage = (idx: number) => {
+  /** Remove by URL (not index) since the grouped UI doesn't know flat indices. */
+  const removeImageUrl = (url: string) => {
     setForm((prev) => ({
       ...prev,
-      productImages: prev.productImages.filter((_, i) => i !== idx),
+      productImages: prev.productImages.filter((u) => u !== url),
     }));
   };
+
+  // Group every productImage URL into its category bucket. Anything that
+  // doesn't parse to a known category (legacy uploads from before the
+  // per-category split) falls into `other`.
+  const groupedImages = useMemo(() => {
+    const grouped: Record<ProductCategory, string[]> = {
+      topwear: [],
+      'extra-layer': [],
+      bottomwear: [],
+      headwear: [],
+      accessories: [],
+      footwear: [],
+      eyewear: [],
+    };
+    const other: string[] = [];
+    for (const url of form.productImages) {
+      const cat = categoryFromUrl(url);
+      if (cat) grouped[cat].push(url);
+      else other.push(url);
+    }
+    return { grouped, other };
+  }, [form.productImages]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -208,7 +241,7 @@ export function OutfitDetailModal({
   };
 
   const meta = STATUS_META[form.status];
-  const busy = saving || deleting || uploading;
+  const busy = saving || deleting || uploadingCategory !== null;
 
   return (
     <Modal
@@ -291,41 +324,40 @@ export function OutfitDetailModal({
             </p>
           </header>
 
-          {/* Upload trigger */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={handleFiles}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
-            className={cn(
-              'flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-stone-300 bg-stone-50 px-4 py-5 text-sm font-medium text-stone-600 transition-colors',
-              'hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2',
-              busy && 'cursor-not-allowed opacity-60',
-            )}
-          >
-            <Upload className="h-4 w-4" />
-            {uploading ? 'Uploading…' : 'Upload screenshot'}
-          </button>
+          {/* One slot per garment category. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {PRODUCT_CATEGORIES.map((cat) => (
+              <CategorySlot
+                key={cat}
+                category={cat}
+                images={groupedImages.grouped[cat]}
+                onUpload={(files) => handleCategoryFiles(cat, files)}
+                onRemoveUrl={removeImageUrl}
+                uploading={uploadingCategory === cat}
+                busy={busy}
+              />
+            ))}
+          </div>
 
-          {/* Thumbnails */}
-          {form.productImages.length > 0 ? (
-            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {form.productImages.map((url, i) => (
-                <ProductThumbnail
-                  key={`${url}-${i}`}
-                  url={url}
-                  onRemove={() => removeImage(i)}
-                  disabled={busy}
-                />
-              ))}
+          {/* Legacy / unparseable URLs land here so they're not lost. */}
+          {groupedImages.other.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-stone-700">Other</p>
+                <p className="text-[10px] text-stone-400">
+                  Legacy uploads · not tagged with a category
+                </p>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                {groupedImages.other.map((url) => (
+                  <ProductThumbnail
+                    key={url}
+                    url={url}
+                    onRemove={() => removeImageUrl(url)}
+                    disabled={busy}
+                  />
+                ))}
+              </div>
             </div>
           ) : null}
 
@@ -522,6 +554,90 @@ function OutfitSummary({
           No items captured yet. Use Edit details to fill them in.
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * One garment-category upload zone: label + counter, an upload trigger,
+ * and the row of thumbnails belonging to this category. Each slot owns
+ * its own hidden file input so picking the same file in two categories
+ * back-to-back still re-fires the change event.
+ */
+function CategorySlot({
+  category,
+  images,
+  onUpload,
+  onRemoveUrl,
+  uploading,
+  busy,
+}: {
+  category: ProductCategory;
+  images: string[];
+  onUpload: (files: File[]) => void | Promise<void>;
+  onRemoveUrl: (url: string) => void;
+  uploading: boolean;
+  busy: boolean;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+    void onUpload(files);
+  };
+
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-stone-700">
+          {PRODUCT_CATEGORY_LABELS[category]}
+        </p>
+        <p className="text-[10px] tabular-nums text-stone-400">
+          {images.length === 0
+            ? 'no shots'
+            : images.length === 1
+              ? '1 shot'
+              : `${images.length} shots`}
+        </p>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="sr-only"
+        onChange={handleFiles}
+      />
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={busy}
+        className={cn(
+          'mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-stone-300 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-600 transition-colors',
+          'hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2',
+          busy && 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <Upload className="h-3 w-3" />
+        {uploading ? 'Uploading…' : 'Upload'}
+      </button>
+
+      {images.length > 0 ? (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {images.map((url) => (
+            <ProductThumbnail
+              key={url}
+              url={url}
+              onRemove={() => onRemoveUrl(url)}
+              disabled={busy}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

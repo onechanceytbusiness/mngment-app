@@ -94,19 +94,30 @@ const PRODUCT_SHOTS_BUCKET = 'product-shots';
  * Upload a single product screenshot to Supabase Storage and return its
  * public URL. The bucket must exist and be set to "public" so the URLs
  * resolve without a signed-URL flow (see README for setup).
+ *
+ * `category` is a short slug (e.g. "topwear", "footwear") used as the
+ * upload subfolder. The category is preserved through the public URL
+ * and parsed back out on load — see categoryFromUrl() in
+ * features/aahaan-studio/lib/productCategories.ts.
  */
-export async function uploadProductShot(file: File): Promise<string> {
+export async function uploadProductShot(
+  file: File,
+  category: string,
+): Promise<string> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Only image files are supported.');
   }
 
-  // Random-ish filename to avoid collisions and keep the bucket flat.
-  // Extension is sanitised (lowercase, max 5 chars) so a malformed
-  // file.name can't produce a weird path.
+  // Random-ish filename. Extension is sanitised (lowercase, alnum,
+  // max 5 chars) so a malformed file.name can't produce a weird path.
   const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
   const rand = Math.random().toString(36).slice(2, 12);
-  const path = `${Date.now()}_${rand}.${ext}`;
+  // Sanitise the category slug too, just in case — only lowercase
+  // letters + hyphens are allowed in the subfolder name.
+  const safeCategory =
+    (category || 'other').toLowerCase().replace(/[^a-z-]/g, '') || 'other';
+  const path = `${safeCategory}/${Date.now()}_${rand}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(PRODUCT_SHOTS_BUCKET)
