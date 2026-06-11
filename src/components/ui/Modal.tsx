@@ -78,7 +78,13 @@ export function Modal({
 
       <div
         className={cn(
-          'relative z-10 flex w-full flex-col rounded-t-2xl bg-white shadow-card sm:rounded-2xl',
+          // max-h caps the panel at viewport-minus-gutter so the
+          // sticky header + footer never get pushed off-screen on
+          // short windows. The body inside has flex-1 overflow-y-auto,
+          // so internal scroll handles overflow cleanly. Uses dvh so
+          // mobile browsers with retracting URL bars don't clip the
+          // footer.
+          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-t-2xl bg-white shadow-card sm:rounded-2xl',
           SIZE_CLASS[size],
         )}
         onClick={(e) => e.stopPropagation()}
