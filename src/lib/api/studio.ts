@@ -84,6 +84,55 @@ export async function getAvatarIdentity(): Promise<AvatarIdentity | null> {
   return (data as AvatarIdentity | null) ?? null;
 }
 
+// ──────────────────────────────────────────────────────────────────
+// Storage — product screenshots
+// ──────────────────────────────────────────────────────────────────
+
+const PRODUCT_SHOTS_BUCKET = 'product-shots';
+
+/**
+ * Upload a single product screenshot to Supabase Storage and return its
+ * public URL. The bucket must exist and be set to "public" so the URLs
+ * resolve without a signed-URL flow (see README for setup).
+ */
+export async function uploadProductShot(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files are supported.');
+  }
+
+  // Random-ish filename to avoid collisions and keep the bucket flat.
+  // Extension is sanitised (lowercase, max 5 chars) so a malformed
+  // file.name can't produce a weird path.
+  const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+  const rand = Math.random().toString(36).slice(2, 12);
+  const path = `${Date.now()}_${rand}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(PRODUCT_SHOTS_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    });
+
+  if (uploadError) {
+    throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(PRODUCT_SHOTS_BUCKET)
+    .getPublicUrl(path);
+
+  if (!data?.publicUrl) {
+    throw new Error(
+      'Upload succeeded but the public URL could not be resolved. Is the bucket public?',
+    );
+  }
+
+  return data.publicUrl;
+}
+
 /**
  * Save the identity. If we already have an id, update; otherwise insert
  * (Supabase generates the uuid). Returns the persisted row.

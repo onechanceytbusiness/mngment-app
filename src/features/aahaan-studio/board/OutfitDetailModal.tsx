@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react';
-import { Save, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import {
+  ChevronDown,
+  ImageIcon,
+  Save,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 import { cn } from '@/lib/cn';
-import { deleteOutfit, updateOutfit } from '@/lib/api';
+import {
+  deleteOutfit,
+  updateOutfit,
+  uploadProductShot,
+} from '@/lib/api';
 import type { DailyOutfit, OutfitStatus, ProductLink } from '@/lib/types';
 import { OUTFIT_STATUSES } from '@/lib/types';
 import { STATUS_META } from '@/features/aahaan-studio/lib/status';
-import {
-  parseProductImages,
-  parseProductLinks,
-  stringifyProductImages,
-  stringifyProductLinks,
-} from '@/features/aahaan-studio/lib/parseProductLinks';
 
 export interface OutfitDetailModalProps {
   open: boolean;
@@ -24,6 +29,14 @@ export interface OutfitDetailModalProps {
 }
 
 interface FormState {
+  // Always visible
+  status: OutfitStatus;
+
+  // Products section
+  productImages: string[];
+  productLinkUrl: string;
+
+  // Hidden behind "Edit details"
   title: string;
   thoughts: string;
   top: string;
@@ -33,14 +46,14 @@ interface FormState {
   background: string;
   caption: string;
   hashtags: string;
-  product_links_text: string;
-  product_images_text: string;
-  status: OutfitStatus;
 }
 
 function buildInitial(outfit: DailyOutfit | null): FormState {
   if (!outfit) {
     return {
+      status: 'idea',
+      productImages: [],
+      productLinkUrl: '',
       title: '',
       thoughts: '',
       top: '',
@@ -50,12 +63,15 @@ function buildInitial(outfit: DailyOutfit | null): FormState {
       background: '',
       caption: '',
       hashtags: '',
-      product_links_text: '',
-      product_images_text: '',
-      status: 'idea',
     };
   }
   return {
+    status: outfit.status,
+    productImages: outfit.product_images ?? [],
+    // The redesign exposes ONE optional URL input. If multiple links
+    // exist on the row, we keep the first one in the input; the rest
+    // are dropped on save. (No multi-link UX in this pass.)
+    productLinkUrl: outfit.product_links?.[0]?.url ?? '',
     title: outfit.title ?? '',
     thoughts: outfit.thoughts ?? '',
     top: outfit.top ?? '',
@@ -65,9 +81,6 @@ function buildInitial(outfit: DailyOutfit | null): FormState {
     background: outfit.background ?? '',
     caption: outfit.caption ?? '',
     hashtags: outfit.hashtags ?? '',
-    product_links_text: stringifyProductLinks(outfit.product_links),
-    product_images_text: stringifyProductImages(outfit.product_images),
-    status: outfit.status,
   };
 }
 
@@ -82,11 +95,15 @@ export function OutfitDetailModal({
   const [form, setForm] = useState<FormState>(() => buildInitial(outfit));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // When the modal opens for a different outfit, reset the form.
+  // When the modal opens for a different outfit, reset everything.
   useEffect(() => {
     if (open) {
       setForm(buildInitial(outfit));
+      setEditOpen(false);
     }
   }, [open, outfit]);
 
@@ -94,16 +111,62 @@ export function OutfitDetailModal({
 
   const update =
     <K extends keyof FormState>(key: K) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value as FormState[K] }));
 
-  // Live thumbnails preview parsed from the images textarea.
-  const parsedImages = parseProductImages(form.product_images_text);
+  const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    // Reset the input immediately so picking the same file twice re-fires onChange.
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      // Upload in parallel; partial success is fine — we don't want one
+      // bad file to discard all the good ones.
+      const results = await Promise.allSettled(files.map(uploadProductShot));
+      const ok: string[] = [];
+      let failed = 0;
+      for (const r of results) {
+        if (r.status === 'fulfilled') ok.push(r.value);
+        else failed += 1;
+      }
+      if (ok.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          productImages: [...prev.productImages, ...ok],
+        }));
+        toast.success(
+          ok.length === 1
+            ? 'Screenshot uploaded.'
+            : `${ok.length} screenshots uploaded.`,
+        );
+      }
+      if (failed > 0) {
+        toast.error(
+          failed === 1
+            ? '1 upload failed.'
+            : `${failed} uploads failed.`,
+        );
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setForm((prev) => ({
+      ...prev,
+      productImages: prev.productImages.filter((_, i) => i !== idx),
+    }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
-    const productLinks: ProductLink[] = parseProductLinks(form.product_links_text);
-    const productImages = parsedImages;
+    const productLinks: ProductLink[] = form.productLinkUrl.trim()
+      ? [{ label: '', url: form.productLinkUrl.trim() }]
+      : [];
+
     try {
       const next = await updateOutfit(outfit.id, {
         title: form.title.trim() || null,
@@ -116,7 +179,7 @@ export function OutfitDetailModal({
         caption: form.caption.trim() || null,
         hashtags: form.hashtags.trim() || null,
         product_links: productLinks,
-        product_images: productImages,
+        product_images: form.productImages,
         status: form.status,
       });
       toast.success('Outfit saved.');
@@ -145,7 +208,7 @@ export function OutfitDetailModal({
   };
 
   const meta = STATUS_META[form.status];
-  const busy = saving || deleting;
+  const busy = saving || deleting || uploading;
 
   return (
     <Modal
@@ -163,7 +226,6 @@ export function OutfitDetailModal({
           </span>
         </span>
       }
-      description={`Edit any field. Changing status moves the card to that column.`}
       size="xl"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -200,167 +262,309 @@ export function OutfitDetailModal({
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
-        {/* Top row: title + status */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_180px]">
-          <Field label="Title">
-            <input
-              type="text"
-              value={form.title}
-              onChange={update('title')}
-              disabled={busy}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Status">
-            <select
-              value={form.status}
-              onChange={update('status')}
-              disabled={busy}
-              className={cn(inputClass, 'pr-7 lowercase')}
-            >
-              {OUTFIT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+      <div className="flex flex-col gap-5">
+        {/* ── Read-only AI-generated look summary ───────────── */}
+        <OutfitSummary form={form} outfit={outfit} />
 
-        {/* Meta hint */}
-        <p className="text-[11px] text-stone-400">
-          {outfit.outfit_date ? <>📅 {outfit.outfit_date}</> : null}
-          {outfit.outfit_date && outfit.outfit_no !== null ? ' · ' : null}
-          {outfit.outfit_no !== null ? <>#{outfit.outfit_no}</> : null}
-        </p>
-
-        {/* Thoughts */}
-        <Field label="Thoughts">
-          <textarea
-            rows={3}
-            value={form.thoughts}
-            onChange={update('thoughts')}
+        {/* ── Status (always visible) ───────────────────────── */}
+        <Field label="Status">
+          <select
+            value={form.status}
+            onChange={update('status')}
             disabled={busy}
-            className={textareaClass}
-          />
+            className={cn(inputClass, 'lowercase')}
+          >
+            {OUTFIT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </Field>
 
-        {/* Garments grid */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Top">
-            <input
-              type="text"
-              value={form.top}
-              onChange={update('top')}
-              disabled={busy}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Bottom">
-            <input
-              type="text"
-              value={form.bottom}
-              onChange={update('bottom')}
-              disabled={busy}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Footwear">
-            <input
-              type="text"
-              value={form.footwear}
-              onChange={update('footwear')}
-              disabled={busy}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Accessories">
-            <input
-              type="text"
-              value={form.accessories}
-              onChange={update('accessories')}
-              disabled={busy}
-              className={inputClass}
-            />
-          </Field>
-        </div>
+        {/* ── Products (primary section) ────────────────────── */}
+        <section className="rounded-lg border border-stone-200 p-4">
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-stone-900">Products</h3>
+            <p className="text-[11px] text-stone-400">
+              Screenshots first · link optional
+            </p>
+          </header>
 
-        <Field label="Background">
+          {/* Upload trigger */}
           <input
-            type="text"
-            value={form.background}
-            onChange={update('background')}
-            disabled={busy}
-            className={inputClass}
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={handleFiles}
           />
-        </Field>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            className={cn(
+              'flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-stone-300 bg-stone-50 px-4 py-5 text-sm font-medium text-stone-600 transition-colors',
+              'hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2',
+              busy && 'cursor-not-allowed opacity-60',
+            )}
+          >
+            <Upload className="h-4 w-4" />
+            {uploading ? 'Uploading…' : 'Upload screenshot'}
+          </button>
 
-        {/* Product links */}
-        <Field
-          label="Product links"
-          hint='One per line as "Label | https://…"'
-        >
-          <textarea
-            rows={4}
-            value={form.product_links_text}
-            onChange={update('product_links_text')}
-            disabled={busy}
-            placeholder={'Anita Dongre kurta | https://anitadongre.com/...\nClog | https://example.com/...'}
-            className={cn(textareaClass, 'font-mono text-xs')}
-          />
-        </Field>
-
-        {/* Product images */}
-        <Field label="Product images" hint="One URL per line.">
-          <textarea
-            rows={3}
-            value={form.product_images_text}
-            onChange={update('product_images_text')}
-            disabled={busy}
-            placeholder={'https://...\nhttps://...'}
-            className={cn(textareaClass, 'font-mono text-xs')}
-          />
-          {parsedImages.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {parsedImages.map((url, i) => (
-                <img
+          {/* Thumbnails */}
+          {form.productImages.length > 0 ? (
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {form.productImages.map((url, i) => (
+                <ProductThumbnail
                   key={`${url}-${i}`}
-                  src={url}
-                  alt=""
-                  className="h-14 w-14 rounded-md object-cover ring-1 ring-stone-200"
-                  loading="lazy"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
+                  url={url}
+                  onRemove={() => removeImage(i)}
+                  disabled={busy}
                 />
               ))}
             </div>
           ) : null}
-        </Field>
 
-        {/* Caption + hashtags */}
-        <Field label="Caption">
-          <textarea
-            rows={3}
-            value={form.caption}
-            onChange={update('caption')}
-            disabled={busy}
-            className={textareaClass}
-          />
-        </Field>
-        <Field label="Hashtags">
-          <textarea
-            rows={2}
-            value={form.hashtags}
-            onChange={update('hashtags')}
-            disabled={busy}
-            placeholder="#fashion #aahaan #ootd"
-            className={textareaClass}
-          />
-        </Field>
+          {/* Optional link */}
+          <div className="mt-4">
+            <Field label="Product link (optional)">
+              <input
+                type="url"
+                value={form.productLinkUrl}
+                onChange={update('productLinkUrl')}
+                disabled={busy}
+                placeholder="https://…"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </section>
+
+        {/* ── Collapsed: Edit details ───────────────────────── */}
+        <div className="rounded-lg border border-stone-200 bg-white">
+          <button
+            type="button"
+            onClick={() => setEditOpen((o) => !o)}
+            aria-expanded={editOpen}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            <span>Edit details</span>
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 text-stone-400 transition-transform',
+                editOpen && 'rotate-180',
+              )}
+              aria-hidden
+            />
+          </button>
+          {editOpen ? (
+            <div className="flex flex-col gap-3 border-t border-stone-200 p-4">
+              <Field label="Title">
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={update('title')}
+                  disabled={busy}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Thoughts">
+                <textarea
+                  rows={3}
+                  value={form.thoughts}
+                  onChange={update('thoughts')}
+                  disabled={busy}
+                  className={textareaClass}
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Top">
+                  <input
+                    type="text"
+                    value={form.top}
+                    onChange={update('top')}
+                    disabled={busy}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Bottom">
+                  <input
+                    type="text"
+                    value={form.bottom}
+                    onChange={update('bottom')}
+                    disabled={busy}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Footwear">
+                  <input
+                    type="text"
+                    value={form.footwear}
+                    onChange={update('footwear')}
+                    disabled={busy}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Accessories">
+                  <input
+                    type="text"
+                    value={form.accessories}
+                    onChange={update('accessories')}
+                    disabled={busy}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Background">
+                <input
+                  type="text"
+                  value={form.background}
+                  onChange={update('background')}
+                  disabled={busy}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Caption">
+                <textarea
+                  rows={3}
+                  value={form.caption}
+                  onChange={update('caption')}
+                  disabled={busy}
+                  className={textareaClass}
+                />
+              </Field>
+
+              <Field label="Hashtags">
+                <textarea
+                  rows={2}
+                  value={form.hashtags}
+                  onChange={update('hashtags')}
+                  disabled={busy}
+                  placeholder="#fashion #aahaan #ootd"
+                  className={textareaClass}
+                />
+              </Field>
+            </div>
+          ) : null}
+        </div>
       </div>
     </Modal>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────
+// Helpers
+// ───────────────────────────────────────────────────────────────
+
+/**
+ * Compact read-only summary at the top of the modal. Reflects the
+ * CURRENT form state (so editing in "Edit details" updates the
+ * preview live), and falls back gracefully when fields are blank.
+ */
+function OutfitSummary({
+  form,
+  outfit,
+}: {
+  form: FormState;
+  outfit: DailyOutfit;
+}) {
+  const items = [
+    { label: 'Top', value: form.top },
+    { label: 'Bottom', value: form.bottom },
+    { label: 'Footwear', value: form.footwear },
+    { label: 'Accessories', value: form.accessories },
+    { label: 'Background', value: form.background },
+  ].filter((item) => item.value && item.value.trim().length > 0);
+
+  return (
+    <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+          AI-generated look
+        </p>
+        <p className="text-[11px] text-stone-400">
+          {outfit.outfit_date ?? ''}
+          {outfit.outfit_date && outfit.outfit_no !== null ? ' · ' : ''}
+          {outfit.outfit_no !== null ? `#${outfit.outfit_no}` : ''}
+        </p>
+      </div>
+
+      <h3
+        className={cn(
+          'mt-1.5 text-base font-semibold leading-snug',
+          form.title ? 'text-stone-900' : 'italic text-stone-400',
+        )}
+      >
+        {form.title || 'Untitled look'}
+      </h3>
+
+      {items.length > 0 ? (
+        <dl className="mt-3 grid grid-cols-[88px_1fr] gap-x-4 gap-y-1.5 text-xs">
+          {items.map((item) => (
+            <div key={item.label} className="contents">
+              <dt className="font-semibold uppercase tracking-wide text-stone-400">
+                {item.label}
+              </dt>
+              <dd className="text-stone-700">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-2 text-xs italic text-stone-400">
+          No items captured yet. Use Edit details to fill them in.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ProductThumbnail({
+  url,
+  onRemove,
+  disabled,
+}: {
+  url: string;
+  onRemove: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="group relative aspect-square overflow-hidden rounded-md ring-1 ring-stone-200">
+      {/* Fallback tile shows behind the img — if the img fails to load
+          and is set to display:none, the fallback below remains visible. */}
+      <div className="absolute inset-0 flex items-center justify-center bg-stone-100 text-stone-400">
+        <ImageIcon className="h-5 w-5" />
+      </div>
+      <img
+        src={url}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        aria-label="Remove screenshot"
+        className={cn(
+          'absolute right-1 top-1 rounded-full bg-mngmnt-ink/80 p-1 text-mngmnt-paper transition-colors',
+          'hover:bg-mngmnt-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400',
+          disabled && 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
   );
 }
 
@@ -377,7 +581,7 @@ function Field({
 }: {
   label: string;
   hint?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
