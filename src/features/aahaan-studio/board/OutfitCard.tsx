@@ -1,6 +1,6 @@
 import type { DailyOutfit } from '@/lib/types';
 import { cn } from '@/lib/cn';
-import { STATUS_META } from '@/features/aahaan-studio/lib/status';
+import { metaForStatus } from '@/features/aahaan-studio/lib/status';
 
 export interface OutfitCardProps {
   outfit: DailyOutfit;
@@ -28,7 +28,7 @@ function dateLabel(outfit: DailyOutfit): string {
 }
 
 export function OutfitCard({ outfit, onOpen }: OutfitCardProps) {
-  const meta = STATUS_META[outfit.status];
+  const meta = metaForStatus(outfit.status);
   const date = dateLabel(outfit);
   const spec = specPreview(outfit);
 

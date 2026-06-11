@@ -66,6 +66,18 @@ export const STATUS_META: Record<OutfitStatus, StatusMeta> = {
   },
 };
 
+/**
+ * Safe lookup — defaults to the 'idea' meta if the caller passes an
+ * unknown / null / stale status value. Prevents the modal from
+ * crashing silently when a DB row has a status outside the enum.
+ */
+export function metaForStatus(status: string | null | undefined): StatusMeta {
+  if (status && status in STATUS_META) {
+    return STATUS_META[status as OutfitStatus];
+  }
+  return STATUS_META.idea;
+}
+
 /** Friendly hint shown in an empty kanban column. */
 export const EMPTY_HINT: Record<OutfitStatus, string> = {
   idea: 'New looks land here as they get drafted.',

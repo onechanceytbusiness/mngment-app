@@ -18,7 +18,7 @@ import {
 } from '@/lib/api';
 import type { DailyOutfit, OutfitStatus, ProductLink } from '@/lib/types';
 import { OUTFIT_STATUSES } from '@/lib/types';
-import { STATUS_META } from '@/features/aahaan-studio/lib/status';
+import { metaForStatus } from '@/features/aahaan-studio/lib/status';
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_LABELS,
@@ -71,13 +71,22 @@ function buildInitial(outfit: DailyOutfit | null): FormState {
       hashtags: '',
     };
   }
+  // Defensive: jsonb can hold anything, so confirm arrays before use.
+  // groupedImages further down iterates with for-of, which throws on
+  // non-iterables like a stray object.
+  const productImages = Array.isArray(outfit.product_images)
+    ? outfit.product_images
+    : [];
+  const productLinks = Array.isArray(outfit.product_links)
+    ? outfit.product_links
+    : [];
   return {
     status: outfit.status,
-    productImages: outfit.product_images ?? [],
+    productImages,
     // The redesign exposes ONE optional URL input. If multiple links
     // exist on the row, we keep the first one in the input; the rest
     // are dropped on save. (No multi-link UX in this pass.)
-    productLinkUrl: outfit.product_links?.[0]?.url ?? '',
+    productLinkUrl: productLinks[0]?.url ?? '',
     title: outfit.title ?? '',
     thoughts: outfit.thoughts ?? '',
     top: outfit.top ?? '',
@@ -240,7 +249,7 @@ export function OutfitDetailModal({
     }
   };
 
-  const meta = STATUS_META[form.status];
+  const meta = metaForStatus(form.status);
   const busy = saving || deleting || uploadingCategory !== null;
 
   return (

@@ -2,7 +2,7 @@ import type { DailyOutfit, OutfitStatus } from '@/lib/types';
 import { cn } from '@/lib/cn';
 import {
   EMPTY_HINT,
-  STATUS_META,
+  metaForStatus,
 } from '@/features/aahaan-studio/lib/status';
 import { OutfitCard } from '@/features/aahaan-studio/board/OutfitCard';
 
@@ -13,7 +13,7 @@ export interface BoardColumnProps {
 }
 
 export function BoardColumn({ status, outfits, onOpenOutfit }: BoardColumnProps) {
-  const meta = STATUS_META[status];
+  const meta = metaForStatus(status);
   const empty = outfits.length === 0;
 
   return (
