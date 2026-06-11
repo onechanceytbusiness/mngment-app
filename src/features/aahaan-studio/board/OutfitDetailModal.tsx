@@ -124,6 +124,34 @@ export function OutfitDetailModal({
     }
   }, [open, outfit]);
 
+  // Group every productImage URL into its category bucket. Anything that
+  // doesn't parse to a known category (legacy uploads from before the
+  // per-category split) falls into `other`.
+  //
+  // ⚠ MUST stay above the early return below — every hook in this
+  //   component must run on every render, in the same order, even when
+  //   outfit is null. Putting useMemo after the early return triggered
+  //   React error #310 ("rendered more hooks than during the previous
+  //   render") and crashed the modal silently.
+  const groupedImages = useMemo(() => {
+    const grouped: Record<ProductCategory, string[]> = {
+      topwear: [],
+      'extra-layer': [],
+      bottomwear: [],
+      headwear: [],
+      accessories: [],
+      footwear: [],
+      eyewear: [],
+    };
+    const other: string[] = [];
+    for (const url of form.productImages) {
+      const cat = categoryFromUrl(url);
+      if (cat) grouped[cat].push(url);
+      else other.push(url);
+    }
+    return { grouped, other };
+  }, [form.productImages]);
+
   if (!outfit) return null;
 
   const update =
@@ -180,28 +208,6 @@ export function OutfitDetailModal({
       productImages: prev.productImages.filter((u) => u !== url),
     }));
   };
-
-  // Group every productImage URL into its category bucket. Anything that
-  // doesn't parse to a known category (legacy uploads from before the
-  // per-category split) falls into `other`.
-  const groupedImages = useMemo(() => {
-    const grouped: Record<ProductCategory, string[]> = {
-      topwear: [],
-      'extra-layer': [],
-      bottomwear: [],
-      headwear: [],
-      accessories: [],
-      footwear: [],
-      eyewear: [],
-    };
-    const other: string[] = [];
-    for (const url of form.productImages) {
-      const cat = categoryFromUrl(url);
-      if (cat) grouped[cat].push(url);
-      else other.push(url);
-    }
-    return { grouped, other };
-  }, [form.productImages]);
 
   const handleSave = async () => {
     setSaving(true);
