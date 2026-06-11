@@ -10,7 +10,7 @@ export interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   /** Width preset. Default is 'md' (max-w-md). */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   /** Hide the X close button (e.g. for must-confirm flows). */
   hideCloseButton?: boolean;
 }
@@ -19,6 +19,8 @@ const SIZE_CLASS: Record<NonNullable<ModalProps['size']>, string> = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+  '2xl': 'max-w-4xl',
 };
 
 /**

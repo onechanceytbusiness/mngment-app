@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Bell, Newspaper, Sparkles, Tag, type LucideIcon } from 'lucide-react';
+import {
+  Bell,
+  Newspaper,
+  Shirt,
+  Sparkles,
+  Tag,
+  type LucideIcon,
+} from 'lucide-react';
 import { automations } from '@/config/automations';
 import { useAlerts } from '@/features/live-alerts/AlertsProvider';
 import { useDeals } from '@/features/fa-deals/DealsProvider';
@@ -11,6 +18,7 @@ const ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Bell,
   Tag,
+  Shirt,
 };
 
 function BrandLogo({ className }: { className?: string }) {
