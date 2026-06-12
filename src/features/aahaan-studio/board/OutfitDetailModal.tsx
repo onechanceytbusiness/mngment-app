@@ -23,7 +23,9 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_LABELS,
   categoryFromUrl,
+  isClothingCategory,
   type ProductCategory,
+  type View,
 } from '@/features/aahaan-studio/lib/productCategories';
 
 export interface OutfitDetailModalProps {
@@ -110,10 +112,12 @@ export function OutfitDetailModal({
   const [form, setForm] = useState<FormState>(() => buildInitial(outfit));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // Per-category upload state — null when nothing is uploading, otherwise
-  // the category currently in flight (so we can dim just that slot's button).
-  const [uploadingCategory, setUploadingCategory] =
-    useState<ProductCategory | null>(null);
+  // Per-slot upload state — null when nothing is uploading, otherwise
+  // the (category, view) currently in flight so only that exact
+  // sub-slot's button greys out (not the rest of the modal).
+  const [uploadingSlot, setUploadingSlot] = useState<
+    { category: ProductCategory; view: View } | null
+  >(null);
   const [editOpen, setEditOpen] = useState(false);
 
   // When the modal opens for a different outfit, reset everything.
@@ -124,30 +128,37 @@ export function OutfitDetailModal({
     }
   }, [open, outfit]);
 
-  // Group every productImage URL into its category bucket. Anything that
-  // doesn't parse to a known category (legacy uploads from before the
-  // per-category split) falls into `other`.
+  // Group every productImage URL into its (category, view) bucket.
+  // Each category gets a slot for each of the three views; clothing
+  // categories actually use front/back, single-view categories use
+  // single. URLs that don't parse to a known category fall into
+  // `other` for the legacy fallback group.
   //
   // ⚠ MUST stay above the early return below — every hook in this
   //   component must run on every render, in the same order, even when
-  //   outfit is null. Putting useMemo after the early return triggered
+  //   outfit is null. Putting useMemo after the early return triggers
   //   React error #310 ("rendered more hooks than during the previous
-  //   render") and crashed the modal silently.
+  //   render") and crashes the modal silently.
+  type ViewBuckets = Record<View, string[]>;
   const groupedImages = useMemo(() => {
-    const grouped: Record<ProductCategory, string[]> = {
-      topwear: [],
-      'extra-layer': [],
-      bottomwear: [],
-      headwear: [],
-      accessories: [],
-      footwear: [],
-      eyewear: [],
+    const empty = (): ViewBuckets => ({ front: [], back: [], single: [] });
+    const grouped: Record<ProductCategory, ViewBuckets> = {
+      topwear: empty(),
+      'extra-layer': empty(),
+      bottomwear: empty(),
+      headwear: empty(),
+      accessories: empty(),
+      footwear: empty(),
+      eyewear: empty(),
     };
     const other: string[] = [];
     for (const url of form.productImages) {
-      const cat = categoryFromUrl(url);
-      if (cat) grouped[cat].push(url);
-      else other.push(url);
+      const parsed = categoryFromUrl(url);
+      if (parsed) {
+        grouped[parsed.category][parsed.view].push(url);
+      } else {
+        other.push(url);
+      }
     }
     return { grouped, other };
   }, [form.productImages]);
@@ -160,19 +171,21 @@ export function OutfitDetailModal({
       setForm((f) => ({ ...f, [key]: e.target.value as FormState[K] }));
 
   /**
-   * Upload N files to a specific category. Used by the per-category
-   * upload buttons. Each upload writes to a path prefixed by the
-   * category so categoryFromUrl() can later group them on load.
+   * Upload N files to a specific (category, view) slot. Each upload
+   * writes to a path prefixed by the category AND view so
+   * categoryFromUrl() can later group them back into the right
+   * sub-slot on load.
    */
-  const handleCategoryFiles = async (
+  const handleSlotFiles = async (
     category: ProductCategory,
+    view: View,
     files: File[],
   ) => {
     if (files.length === 0) return;
-    setUploadingCategory(category);
+    setUploadingSlot({ category, view });
     try {
       const results = await Promise.allSettled(
-        files.map((f) => uploadProductShot(f, category)),
+        files.map((f) => uploadProductShot(f, category, view)),
       );
       const ok: string[] = [];
       let failed = 0;
@@ -185,10 +198,12 @@ export function OutfitDetailModal({
           ...prev,
           productImages: [...prev.productImages, ...ok],
         }));
+        const label = PRODUCT_CATEGORY_LABELS[category];
+        const viewLabel = view === 'single' ? '' : ` (${view})`;
         toast.success(
           ok.length === 1
-            ? `Uploaded to ${PRODUCT_CATEGORY_LABELS[category]}.`
-            : `${ok.length} screenshots uploaded to ${PRODUCT_CATEGORY_LABELS[category]}.`,
+            ? `Uploaded to ${label}${viewLabel}.`
+            : `${ok.length} screenshots uploaded to ${label}${viewLabel}.`,
         );
       }
       if (failed > 0) {
@@ -197,7 +212,7 @@ export function OutfitDetailModal({
         );
       }
     } finally {
-      setUploadingCategory(null);
+      setUploadingSlot(null);
     }
   };
 
@@ -256,7 +271,7 @@ export function OutfitDetailModal({
   };
 
   const meta = metaForStatus(form.status);
-  const busy = saving || deleting || uploadingCategory !== null;
+  const busy = saving || deleting || uploadingSlot !== null;
 
   return (
     <Modal
@@ -339,19 +354,48 @@ export function OutfitDetailModal({
             </p>
           </header>
 
-          {/* One slot per garment category. */}
+          {/* One slot per garment category. Clothing categories
+              (topwear / extra-layer / bottomwear) span both columns
+              on desktop so their front+back sub-slots have room to
+              breathe; the single-view categories (headwear /
+              accessories / footwear / eyewear) sit in the 2-col grid
+              underneath. Order matches PRODUCT_CATEGORIES. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {PRODUCT_CATEGORIES.map((cat) => (
-              <CategorySlot
-                key={cat}
-                category={cat}
-                images={groupedImages.grouped[cat]}
-                onUpload={(files) => handleCategoryFiles(cat, files)}
-                onRemoveUrl={removeImageUrl}
-                uploading={uploadingCategory === cat}
-                busy={busy}
-              />
-            ))}
+            {PRODUCT_CATEGORIES.map((cat) =>
+              isClothingCategory(cat) ? (
+                <ClothingSlot
+                  key={cat}
+                  category={cat}
+                  frontImages={groupedImages.grouped[cat].front}
+                  backImages={groupedImages.grouped[cat].back}
+                  onUpload={(view, files) => handleSlotFiles(cat, view, files)}
+                  onRemoveUrl={removeImageUrl}
+                  uploadingFront={
+                    uploadingSlot?.category === cat &&
+                    uploadingSlot?.view === 'front'
+                  }
+                  uploadingBack={
+                    uploadingSlot?.category === cat &&
+                    uploadingSlot?.view === 'back'
+                  }
+                  busy={busy}
+                  className="sm:col-span-2"
+                />
+              ) : (
+                <CategorySlot
+                  key={cat}
+                  category={cat}
+                  images={groupedImages.grouped[cat].single}
+                  onUpload={(files) => handleSlotFiles(cat, 'single', files)}
+                  onRemoveUrl={removeImageUrl}
+                  uploading={
+                    uploadingSlot?.category === cat &&
+                    uploadingSlot?.view === 'single'
+                  }
+                  busy={busy}
+                />
+              ),
+            )}
           </div>
 
           {/* Legacy / unparseable URLs land here so they're not lost. */}
@@ -643,6 +687,155 @@ function CategorySlot({
 
       {images.length > 0 ? (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {images.map((url) => (
+            <ProductThumbnail
+              key={url}
+              url={url}
+              onRemove={() => onRemoveUrl(url)}
+              disabled={busy}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Clothing-category card containing two SubSlot side by side — one
+ * for Front, one for Back. Spans both columns of the outer grid on
+ * desktop (via the className prop) so the two sub-slots get
+ * comfortable widths instead of being crammed in half a column.
+ */
+function ClothingSlot({
+  category,
+  frontImages,
+  backImages,
+  onUpload,
+  onRemoveUrl,
+  uploadingFront,
+  uploadingBack,
+  busy,
+  className,
+}: {
+  category: ProductCategory;
+  frontImages: string[];
+  backImages: string[];
+  onUpload: (view: View, files: File[]) => void | Promise<void>;
+  onRemoveUrl: (url: string) => void;
+  uploadingFront: boolean;
+  uploadingBack: boolean;
+  busy: boolean;
+  className?: string;
+}) {
+  const total = frontImages.length + backImages.length;
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-stone-200 bg-white p-3',
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-stone-700">
+          {PRODUCT_CATEGORY_LABELS[category]}
+        </p>
+        <p className="text-[10px] tabular-nums text-stone-400">
+          {total === 0
+            ? 'no shots'
+            : total === 1
+              ? '1 shot'
+              : `${total} shots`}
+        </p>
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <SubSlot
+          label="Front"
+          images={frontImages}
+          onUpload={(files) => onUpload('front', files)}
+          onRemoveUrl={onRemoveUrl}
+          uploading={uploadingFront}
+          busy={busy}
+        />
+        <SubSlot
+          label="Back"
+          images={backImages}
+          onUpload={(files) => onUpload('back', files)}
+          onRemoveUrl={onRemoveUrl}
+          uploading={uploadingBack}
+          busy={busy}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Single front-or-back sub-slot used inside a ClothingSlot. Smaller
+ * type and tighter padding than CategorySlot since two of these
+ * share a row.
+ */
+function SubSlot({
+  label,
+  images,
+  onUpload,
+  onRemoveUrl,
+  uploading,
+  busy,
+}: {
+  label: string;
+  images: string[];
+  onUpload: (files: File[]) => void | Promise<void>;
+  onRemoveUrl: (url: string) => void;
+  uploading: boolean;
+  busy: boolean;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+    void onUpload(files);
+  };
+
+  return (
+    <div className="rounded-md border border-stone-200 bg-stone-50 p-2">
+      <div className="flex items-center justify-between gap-1">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+          {label}
+        </p>
+        <p className="text-[10px] tabular-nums text-stone-400">
+          {images.length === 0 ? '—' : images.length}
+        </p>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="sr-only"
+        onChange={handleFiles}
+      />
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={busy}
+        className={cn(
+          'mt-1.5 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-stone-300 bg-white px-2 py-1.5 text-[11px] font-medium text-stone-600 transition-colors',
+          'hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2',
+          busy && 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <Upload className="h-3 w-3" />
+        {uploading ? 'Uploading…' : 'Upload'}
+      </button>
+
+      {images.length > 0 ? (
+        <div className="mt-1.5 grid grid-cols-2 gap-1">
           {images.map((url) => (
             <ProductThumbnail
               key={url}

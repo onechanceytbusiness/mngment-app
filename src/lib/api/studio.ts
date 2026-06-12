@@ -95,14 +95,17 @@ const PRODUCT_SHOTS_BUCKET = 'product-shots';
  * public URL. The bucket must exist and be set to "public" so the URLs
  * resolve without a signed-URL flow (see README for setup).
  *
- * `category` is a short slug (e.g. "topwear", "footwear") used as the
- * upload subfolder. The category is preserved through the public URL
- * and parsed back out on load — see categoryFromUrl() in
+ * Path layout: `{category}/{view}/{timestamp}_{rand}.{ext}`
+ *
+ * Both `category` (e.g. "topwear") and `view` ("front" | "back" |
+ * "single") travel through the public URL and are parsed back out on
+ * load — see categoryFromUrl() in
  * features/aahaan-studio/lib/productCategories.ts.
  */
 export async function uploadProductShot(
   file: File,
   category: string,
+  view: 'front' | 'back' | 'single',
 ): Promise<string> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Only image files are supported.');
@@ -113,11 +116,16 @@ export async function uploadProductShot(
   const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const ext = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
   const rand = Math.random().toString(36).slice(2, 12);
-  // Sanitise the category slug too, just in case — only lowercase
-  // letters + hyphens are allowed in the subfolder name.
+
+  // Sanitise the category + view slugs — only lowercase letters and
+  // hyphens are allowed. Defends against a caller passing a weird
+  // value that would produce an invalid storage path.
   const safeCategory =
     (category || 'other').toLowerCase().replace(/[^a-z-]/g, '') || 'other';
-  const path = `${safeCategory}/${Date.now()}_${rand}.${ext}`;
+  const safeView =
+    view === 'front' || view === 'back' || view === 'single' ? view : 'single';
+
+  const path = `${safeCategory}/${safeView}/${Date.now()}_${rand}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(PRODUCT_SHOTS_BUCKET)
