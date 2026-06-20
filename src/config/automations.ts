@@ -39,6 +39,9 @@ export const automations: AutomationDef[] = [
     description:
       'Daily outfit pipeline for the AI avatar — track ideas through to posted.',
     icon: 'Shirt',
-    status: 'active',
+    // Temporarily deactivated. Flip back to 'active' to re-enable;
+    // all the code (DealsProvider, routes, registry, modal) stays in
+    // place so re-enabling is a one-line change.
+    status: 'coming-soon',
   },
 ];
