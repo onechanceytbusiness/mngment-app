@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, ImageIcon, Save, UserSquare2 } from 'lucide-react';
+import { ExternalLink, Save, UserSquare2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -29,12 +29,9 @@ function buildInitial(row: AvatarIdentity | null): FormState {
 function IdentitySkeleton() {
   return (
     <Card className="flex flex-col gap-5 p-5 md:p-6">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-20 w-20 rounded-lg" />
-        <div className="min-w-0 flex-1">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="mt-2 h-9 w-2/3" />
-        </div>
+      <div>
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mt-2 h-10 w-2/3" />
       </div>
       <div>
         <Skeleton className="h-3 w-24" />
@@ -121,40 +118,16 @@ export function IdentityTab() {
         </p>
       </div>
 
-      {/* Hero image preview + name */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="shrink-0">
-          {form.hero_image_url ? (
-            <img
-              src={form.hero_image_url}
-              alt={form.name || 'Avatar hero'}
-              className="h-24 w-24 rounded-lg object-cover ring-1 ring-stone-200 sm:h-28 sm:w-28"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <div
-              className="flex h-24 w-24 items-center justify-center rounded-lg bg-stone-100 text-stone-400 sm:h-28 sm:w-28"
-              aria-hidden
-            >
-              <ImageIcon className="h-7 w-7" />
-            </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <Field label="Name">
-            <input
-              type="text"
-              value={form.name}
-              onChange={update('name')}
-              disabled={saving}
-              placeholder="Aahaan"
-              className={inputClass}
-            />
-          </Field>
-        </div>
-      </div>
+      <Field label="Name">
+        <input
+          type="text"
+          value={form.name}
+          onChange={update('name')}
+          disabled={saving}
+          placeholder="Aahaan"
+          className={inputClass}
+        />
+      </Field>
 
       <Field
         label="Profile"

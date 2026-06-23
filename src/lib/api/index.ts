@@ -60,7 +60,6 @@ export {
   setOutfitStatus,
   getAvatarIdentity,
   saveAvatarIdentity,
-  uploadProductShot,
 } from '@/lib/api/studio';
 
 export { apiConfig };
