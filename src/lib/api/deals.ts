@@ -102,11 +102,15 @@ export async function listDeals(
   audience: Audience,
   filters: ListDealsFilters = {},
 ): Promise<Deal[]> {
+  // 200-row cap keeps Disk-IO bounded as the table grows. Older deals
+  // outside the window aren't visible in the UI; n8n auto-fetcher
+  // inserts more than this per day so the limit is intentional.
   let query = supabase
     .from('deals')
     .select('*')
     .eq('audience', audience)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
 
   if (filters.category) query = query.eq('category', filters.category);
   if (filters.status) query = query.eq('status', filters.status);

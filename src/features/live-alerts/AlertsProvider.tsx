@@ -29,7 +29,10 @@ interface AlertsContextValue {
 
 const AlertsContext = createContext<AlertsContextValue | null>(null);
 
-const POLL_INTERVAL_MS = 120_000; // 2 minutes
+// 10 minutes. Was 2 min — bumped to cut load on the /alerts webhook
+// (which under the hood may touch Supabase). User-driven refresh from
+// the Live Alerts view still works on demand.
+const POLL_INTERVAL_MS = 600_000;
 
 export function AlertsProvider({ children }: { children: ReactNode }) {
   const [serverAlerts, setServerAlerts] = useState<Alert[]>([]);

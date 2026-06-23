@@ -21,7 +21,11 @@ interface DealsContextValue {
 
 const DealsContext = createContext<DealsContextValue | null>(null);
 
-const POLL_INTERVAL_MS = 120_000; // 2 minutes — matches AlertsProvider
+// 10 minutes. Was 2 min — bumped to cut Supabase Disk-IO load. Mutations
+// from the deals view still call refresh() directly so the badge stays
+// accurate while the user is actively working; this interval is just the
+// background-staleness guard for other tabs / external changes.
+const POLL_INTERVAL_MS = 600_000;
 
 /**
  * App-root provider that maintains a live count of unposted deals so the

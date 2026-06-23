@@ -29,12 +29,42 @@ function normaliseOutfit(row: Record<string, unknown>): DailyOutfit {
 // daily_outfits
 // ──────────────────────────────────────────────────────────────────
 
-/** All outfits, newest first by created_at. The board groups by status client-side. */
+/**
+ * All outfits, newest first by created_at. The board groups by status
+ * client-side.
+ *
+ * Disk-IO discipline:
+ *   - Explicit column list — skips the heaviest jsonb columns
+ *     (product_links, product_images) entirely since the text-only
+ *     modal no longer reads them. normaliseOutfit() fills them back as
+ *     empty arrays so the DailyOutfit type contract holds.
+ *   - `.limit(200)` caps the worst-case read at ~20 days of daily
+ *     ideas. Pre-fix this query was effectively unbounded.
+ */
+const OUTFIT_LIST_COLUMNS = [
+  'id',
+  'outfit_date',
+  'outfit_no',
+  'title',
+  'thoughts',
+  'top',
+  'bottom',
+  'footwear',
+  'accessories',
+  'background',
+  'caption',
+  'hashtags',
+  'status',
+  'created_at',
+  'updated_at',
+].join(',');
+
 export async function listOutfits(): Promise<DailyOutfit[]> {
   const { data, error } = await supabase
     .from('daily_outfits')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select(OUTFIT_LIST_COLUMNS)
+    .order('created_at', { ascending: false })
+    .limit(200);
   if (error) throw new Error(`listOutfits: ${error.message}`);
   return (data ?? []).map((row) => normaliseOutfit(row as Record<string, unknown>));
 }
