@@ -66,7 +66,13 @@ export async function listOutfits(): Promise<DailyOutfit[]> {
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) throw new Error(`listOutfits: ${error.message}`);
-  return (data ?? []).map((row) => normaliseOutfit(row as Record<string, unknown>));
+  // Cast via `unknown` first — Supabase's stricter typing for
+  // `.select(columns)` (vs `.select('*')`) doesn't overlap directly
+  // with Record<string, unknown>, but the runtime shape is identical
+  // so the unknown bounce is safe.
+  return (data ?? []).map((row) =>
+    normaliseOutfit(row as unknown as Record<string, unknown>),
+  );
 }
 
 export async function updateOutfit(
