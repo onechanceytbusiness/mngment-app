@@ -13,7 +13,6 @@ import type { ComponentType, LazyExoticComponent } from 'react';
 const registry: Record<string, LazyExoticComponent<ComponentType>> = {
   'fashion-audit': lazy(() => import('@/features/fashion-audit/FashionAuditView')),
   'fa-deals': lazy(() => import('@/features/fa-deals/FaDealsView')),
-  'aahaan-studio': lazy(() => import('@/features/aahaan-studio/AahaanStudioView')),
 };
 
 export function getAutomationComponent(

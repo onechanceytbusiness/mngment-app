@@ -33,12 +33,4 @@ export const automations: AutomationDef[] = [
     icon: 'Tag',
     status: 'active',
   },
-  {
-    id: 'aahaan-studio',
-    name: 'Aahaan Studio',
-    description:
-      'Daily outfit pipeline for the AI avatar — track ideas through to posted.',
-    icon: 'Shirt',
-    status: 'active',
-  },
 ];

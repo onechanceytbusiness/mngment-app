@@ -122,60 +122,7 @@ export interface PostDealResult {
   message?: string;
 }
 
-// ---------- Aahaan Studio ----------
-
-export type OutfitStatus =
-  | 'idea'
-  | 'sourced'
-  | 'generated'
-  | 'edited'
-  | 'ready'
-  | 'posted';
-
-/** Pipeline order — drives the kanban column layout. */
-export const OUTFIT_STATUSES: OutfitStatus[] = [
-  'idea',
-  'sourced',
-  'generated',
-  'edited',
-  'ready',
-  'posted',
-];
-
-export interface ProductLink {
-  label: string;
-  url: string;
-}
-
-/** Mirrors the daily_outfits table schema exactly. */
-export interface DailyOutfit {
-  id: string;
-  outfit_date: string | null; // ISO date (yyyy-mm-dd)
-  outfit_no: number | null;
-  title: string | null;
-  thoughts: string | null;
-  top: string | null;
-  bottom: string | null;
-  footwear: string | null;
-  accessories: string | null;
-  background: string | null;
-  product_links: ProductLink[];
-  product_images: string[];
-  status: OutfitStatus;
-  caption: string | null;
-  hashtags: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/** Mirrors the avatar_identity single-row table. */
-export interface AvatarIdentity {
-  id: string;
-  name: string | null;
-  profile: string | null;
-  hero_image_url: string | null;
-  identity_folder_url: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
+// (Aahaan Studio types removed — the feature was deleted from the app.
+//  The daily_outfits and avatar_identity tables still exist in Supabase
+//  for any background automation that uses them, but the frontend no
+//  longer references them.)

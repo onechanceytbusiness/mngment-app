@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
   Bell,
   Newspaper,
-  Shirt,
   Sparkles,
   Tag,
   type LucideIcon,
@@ -18,7 +17,6 @@ const ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Bell,
   Tag,
-  Shirt,
 };
 
 function BrandLogo({ className }: { className?: string }) {

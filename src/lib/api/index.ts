@@ -51,15 +51,4 @@ export {
   deleteDeal,
 } from '@/lib/api/deals';
 
-// Aahaan Studio — Supabase only, no webhooks. Same single-surface
-// re-export pattern as the other features.
-export {
-  listOutfits,
-  updateOutfit,
-  deleteOutfit,
-  setOutfitStatus,
-  getAvatarIdentity,
-  saveAvatarIdentity,
-} from '@/lib/api/studio';
-
 export { apiConfig };
